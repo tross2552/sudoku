@@ -3,15 +3,16 @@
 
 namespace sudoku
 {
-	Game::Game()
+
+	Game::Game(const unsigned int seed)
 	{
-		Init();
+		rank = 3;
+		Init(rank, seed);
 	}
 
-	void Game::Init()
+	void Game::Init(const int rank, const unsigned int seed)
 	{
-		m_Board = new Board(3);
-		GenerateBoardRandom(*m_Board, 7);
-
+		m_Board = new Board(rank);
+		GenerateBoardRandom(*m_Board, seed);
 	}
 }

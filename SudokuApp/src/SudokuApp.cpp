@@ -22,38 +22,21 @@ void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 int main() {
-	sudoku::Game* game = new sudoku::Game();
+	sudoku::Game* game = new sudoku::Game(0);
 	sudoku::Board* board = game->GetBoard();
 
-
-	std::cout << board->ToString();
-
-	for (int i = 0; i < board->GetSize(); i++)
-	{
-		std::cout << board->GetRow(i).ToString();
-	}
+	std::cout << "Generated Board: " << std::endl;
+	std::cout << board->ToString() << std::endl;
 
 	std::cout << std::endl;
-
-	for (int i = 0; i < board->GetSize(); i++)
-	{
-		std::cout << board->GetColumn(i).ToString();
-	}
-
-	std::cout << std::endl;
-
-	for (int i = 0; i < board->GetSize(); i++)
-	{
-		std::cout << board->GetBlock(i).ToString();
-	}
 
 	//-------imgui code------------
 
 	// Create application window
 	//ImGui_ImplWin32_EnableDpiAwareness();
-	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("ImGui Example"), NULL };
+	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("Sudoku ImGui"), NULL };
 	::RegisterClassEx(&wc);
-	HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("Dear ImGui DirectX11 Example"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
+	HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("Sudoku (Dear ImGui DirectX11)"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
 	// Initialize Direct3D
 	if (!CreateDeviceD3D(hwnd))
@@ -72,7 +55,7 @@ int main() {
 	ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
 
-	bool show_demo_window = true;
+	bool show_demo_window = false;
 	bool show_another_window = false;
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
@@ -107,22 +90,57 @@ int main() {
 
 		// 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
 		{
+			
 			static float f = 0.0f;
 			static int counter = 0;
+			static int seed = 0;
+			static int rank = 3;
+			static int boardSize = board->GetSize();
+			static const int rankLow = 2;
+			static const int rankHigh = 6;
 
-			ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+			ImGui::Begin("Sudoku!");                          // Create a window called "Hello, world!" and append into it.
 
-			ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-			ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-			ImGui::Checkbox("Another Window", &show_another_window);
+			if (ImGui::TreeNode("Board"))
+			{
+				// Here we will showcase three different ways to output a table.
+				// They are very simple variations of a same thing!
 
-			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-			ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+				// [Method 1] Using TableNextRow() to create a new row, and TableSetColumnIndex() to select the column.
+				// In many situations, this is the most flexible and easy to use pattern.
+				if (ImGui::BeginTable("sudokutable", boardSize))
+				{
+					for (int row = 0; row < boardSize; row++)
+					{
+						ImGui::TableNextRow();
+						for (int column = 0; column < boardSize; column++)
+						{
+							ImGui::TableSetColumnIndex(column);
+							ImGui::Text("%d", board->GetCell(row,column)->value);
+						}
+					}
+					ImGui::EndTable();
+				}
+				ImGui::Text("These are the cell values directly from the Board object.");               // Display some text (you can use a format strings too)
+				ImGui::TreePop();
+			}
 
-			if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+			ImGui::InputInt("Seed (generates different boards!)", &seed);
+			ImGui::SliderScalar("Rank (determines size of the board)", ImGuiDataType_U32, &rank, &rankLow, &rankHigh, "%u");
+
+			if (ImGui::Button("New Game"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+			{
+				game->Init(rank,seed);
+				board = game->GetBoard();
+				boardSize = board->GetSize();
 				counter++;
+			}
 			ImGui::SameLine();
 			ImGui::Text("counter = %d", counter);
+
+			
+			ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+			ImGui::Checkbox("Win Game", &show_another_window);
 
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			ImGui::End();
@@ -131,8 +149,8 @@ int main() {
 		// 3. Show another simple window.
 		if (show_another_window)
 		{
-			ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-			ImGui::Text("Hello from another window!");
+			ImGui::Begin("Congratulations!", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+			ImGui::Text("You completed the board!");
 			if (ImGui::Button("Close Me"))
 				show_another_window = false;
 			ImGui::End();

@@ -8,9 +8,15 @@ namespace sudoku
 	class Game
 	{
 	public:
-		Game();
 
-		void Init();
+		int rank;
+
+		Game() :
+			Game(7) {}
+
+		Game(const unsigned int seed);
+
+		void Init(const int rank, const unsigned int seed);
 
 		inline Board* GetBoard() const { return m_Board; }
 
